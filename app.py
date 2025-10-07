@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# DAP ATLAS — Sidebar SaaS (logo grande + abas CSS + scroll interno)
+# DAP ATLAS — Sidebar SaaS (logo grande + abas CSS + scroll interno + EXPORT SVG/PDF vetorial)
 
 from datetime import datetime
 from base64 import b64encode
@@ -66,7 +66,7 @@ body{{margin:0;height:100vh;width:100vw;background:var(--bg);color:var(--text);
   width:var(--panel-w); background:var(--card); border:1px solid var(--border);
   border-radius:18px; box-shadow:0 18px 44px rgba(0,0,0,.45);
   padding:16px; display:flex; flex-direction:column; gap:12px;
-  overflow:auto;               /* ✅ scroll interno, não corta mais */
+  overflow:auto;               /* scroll interno, não corta */
 }}
 .panel-header{{display:flex;align-items:center;justify-content:space-between;gap:18px}}
 .brand{{display:flex;align-items:center;gap:18px}}
@@ -103,13 +103,13 @@ table.minimal th{{color:var(--muted);font-weight:600}}
 
 .footer{{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px}}
 .btn{{display:inline-block;background:var(--primary);color:#08121f;font-weight:800;padding:10px 14px;border-radius:12px;text-decoration:none;border:none}}
-
-@media (max-width:820px){{:root{{--panel-w:92vw}}}}
+.small{{font-size:.85rem}}
+.hidden{{display:none}}
 </style>
 </head>
 <body>
   <div class="stage">
-    <div class="side-panel">
+    <div class="side-panel" id="panel">
       <div class="panel-header">
         <div class="brand">
           <div class="logo-wrap">
@@ -151,48 +151,130 @@ table.minimal th{{color:var(--muted);font-weight:600}}
         <div class="tab-content" id="content-resumo" style="display:none"></div>
       </div>
 
-      <script>
-        // troca simples entre conteúdos sem JS framework
-        const achados = document.getElementById('content-achados');
-        const meta = document.getElementById('content-meta');
-        const resumo = document.getElementById('content-resumo');
-        function show(which) {{
-          achados.style.display = (which==='a')?'block':'none';
-          meta.style.display    = (which==='m')?'block':'none';
-          resumo.style.display  = (which==='r')?'block':'none';
-        }}
-        document.getElementById('tab-achados').onchange = ()=>show('a');
-        document.getElementById('tab-meta').onchange    = ()=>show('m');
-        document.getElementById('tab-resumo').onchange  = ()=>show('r');
-
-        // Preenche conteúdo das abas Meta/Resumo
-        meta.innerHTML = `
-          <div class="section-title">Metadados</div>
-          <table class="minimal">
-            <tr><th>Local</th><td>{local}</td></tr>
-            <tr><th>Data/Hora</th><td>{data_hora}</td></tr>
-            <tr><th>Fonte</th><td>{sensor}</td></tr>
-            <tr><th>Geração</th><td>{agora}</td></tr>
-            <tr><th>Sistema</th><td>DAP ATLAS — SITREP</td></tr>
-          </table>
-        `;
-        resumo.innerHTML = `
-          <div class="section-title">Resumo</div>
-          <p>
-            Detecções sobrepostas à imagem base, com registro geométrico submétrico.
-            Pipeline <b>Imagem Óptica + IA + fusão multi-sensor</b> com atualização em <b>tempo quase-real</b>.
-          </p>
-        `;
-      </script>
-
       <div class="footer">
-        <div class="muted" style="font-size:.85rem;">© {datetime.now().year} MAVIPE Sistemas Espaciais</div>
-        <a class="btn" href="#">Exportar PDF</a>
+        <div class="muted small">© {datetime.now().year} MAVIPE Sistemas Espaciais</div>
+        <!-- sem botão visível; exporto por atalho/URL -->
+        <div id="export-controls" class="hidden">
+          <a class="btn" id="btn-svg">Exportar SVG</a>
+          <a class="btn" id="btn-pdf">Exportar PDF</a>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- libs: dom-to-image-more (SVG) + jsPDF + svg2pdf -->
+  <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@2.8.0/dist/dom-to-image-more.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"></script>
+
+  <script>
+    // Troca das abas
+    const achados = document.getElementById('content-achados');
+    const meta    = document.getElementById('content-meta');
+    const resumo  = document.getElementById('content-resumo');
+    function show(which) {{
+      achados.style.display = (which==='a')?'block':'none';
+      meta.style.display    = (which==='m')?'block':'none';
+      resumo.style.display  = (which==='r')?'block':'none';
+    }}
+    document.getElementById('tab-achados').onchange = ()=>show('a');
+    document.getElementById('tab-meta').onchange    = ()=>show('m');
+    document.getElementById('tab-resumo').onchange  = ()=>show('r');
+
+    // Preenche conteúdo das abas Meta/Resumo
+    meta.innerHTML = `
+      <div class="section-title">Metadados</div>
+      <table class="minimal">
+        <tr><th>Local</th><td>{local}</td></tr>
+        <tr><th>Data/Hora</th><td>{data_hora}</td></tr>
+        <tr><th>Fonte</th><td>{sensor}</td></tr>
+        <tr><th>Geração</th><td>{agora}</td></tr>
+        <tr><th>Sistema</th><td>DAP ATLAS — SITREP</td></tr>
+      </table>
+    `;
+    resumo.innerHTML = `
+      <div class="section-title">Resumo</div>
+      <p>
+        Detecções sobrepostas à imagem base, com registro geométrico submétrico.
+        Pipeline <b>Imagem Óptica + IA + fusão multi-sensor</b> com atualização em <b>tempo quase-real</b>.
+      </p>
+    `;
+
+    // ===== Exportação Vetorial =====
+    const PANEL = document.getElementById('panel');
+
+    async function exportSVG() {{
+      // Converte o painel para SVG via foreignObject (mantém textos como texto)
+      const dataUrl = await domtoimage.toSvg(PANEL, {{
+        bgcolor: '{CARD_DARK}',
+        filter: (node) => true,
+        style: {{
+          // Garante background e fontes
+          'background': '{CARD_DARK}',
+          'color': '{TEXT}'
+        }},
+        quality: 1
+      }});
+      triggerDownload(dataUrl, 'SITREP_Painel.svg');
+    }}
+
+    async function exportPDF() {{
+      // 1) Gera SVG
+      const svgUrl = await domtoimage.toSvg(PANEL, {{
+        bgcolor: '{CARD_DARK}',
+        quality: 1
+      }});
+      const svgText = await (await fetch(svgUrl)).text();
+
+      // 2) Converte SVG -> PDF (A4 portrait)
+      const {{ jsPDF }} = window.jspdf;
+      const pdf = new jsPDF({{ unit: 'pt', format: 'a4', orientation: 'p' }});
+
+      // Ajuste de escala para caber na página mantendo proporção
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgEl  = svgDoc.documentElement;
+      const width  = parseFloat(svgEl.getAttribute('width'))  || PANEL.offsetWidth;
+      const height = parseFloat(svgEl.getAttribute('height')) || PANEL.offsetHeight;
+
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const scale = Math.min(pageW / width, pageH / height);
+
+      // Renderiza o SVG no PDF
+      window.svg2pdf(svgEl, pdf, {{
+        x: (pageW - width * scale) / 2,
+        y: (pageH - height * scale) / 2,
+        scale: scale
+      }});
+
+      pdf.save('SITREP_Painel.pdf');
+    }}
+
+    function triggerDownload(dataUrl, filename) {{
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }}
+
+    // Atalhos: S (SVG), P (PDF)
+    document.addEventListener('keydown', (e) => {{
+      if (e.key === 's' || e.key === 'S') exportSVG();
+      if (e.key === 'p' || e.key === 'P') exportPDF();
+    }});
+
+    // Auto-export por querystring (?export=svg | ?export=pdf)
+    const params = new URLSearchParams(location.search);
+    const exp = params.get('export');
+    if (exp === 'svg') exportSVG();
+    if (exp === 'pdf') exportPDF();
+  </script>
 </body></html>
 """
 
 components.html(html, height=900, scrolling=False)
+
 
