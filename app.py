@@ -117,7 +117,7 @@ table.minimal th{{color:var(--muted);font-weight:600}}
           </div>
           <div>
             <div class="name">Relatório de Situação</div>
-            <div class="sub">Radar SAR + IA</div>
+            <div class="sub">Imagem Óptica + IA</div>
           </div>
         </div>
         <div class="badge">AOI {AOI_ID} • Live 24/7</div>
@@ -180,7 +180,7 @@ table.minimal th{{color:var(--muted);font-weight:600}}
           <div class="section-title">Resumo</div>
           <p>
             Detecções sobrepostas à imagem base, com registro geométrico submétrico.
-            Pipeline <b>SAR + IA + fusão multi-sensor</b> com atualização em <b>tempo quase-real</b>.
+            Pipeline <b>Imagem Óptica + IA + fusão multi-sensor</b> com atualização em <b>tempo quase-real</b>.
           </p>
         `;
       </script>
