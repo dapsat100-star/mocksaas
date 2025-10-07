@@ -29,7 +29,7 @@ if p.exists() and p.stat().st_size > 0:
 # ------- DADOS MOCK (mude para o print) -------
 AOI_ID       = "BR-PA-2025-01"
 confianca    = "92%"
-extensao_km  = "12.4 km"
+extensao_km  = "5 km"
 area_km2     = "26.8 km²"
 resolucao    = "35 cm"
 local        = "XPTO"
