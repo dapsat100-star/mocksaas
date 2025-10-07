@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# DAP ATLAS — Sidebar SaaS (logo grande + abas CSS + scroll interno + EXPORT SVG/PDF vetorial)
+# DAP ATLAS — Sidebar SaaS (logo grande + abas CSS + scroll interno + EXPORT SVG/PDF via atalhos)
 
 from datetime import datetime
 from base64 import b64encode
@@ -102,9 +102,7 @@ table.minimal th, table.minimal td{{border-bottom:1px solid var(--border);paddin
 table.minimal th{{color:var(--muted);font-weight:600}}
 
 .footer{{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px}}
-.btn{{display:inline-block;background:var(--primary);color:#08121f;font-weight:800;padding:10px 14px;border-radius:12px;text-decoration:none;border:none}}
 .small{{font-size:.85rem}}
-.hidden{{display:none}}
 </style>
 </head>
 <body>
@@ -153,11 +151,7 @@ table.minimal th{{color:var(--muted);font-weight:600}}
 
       <div class="footer">
         <div class="muted small">© {datetime.now().year} MAVIPE Sistemas Espaciais</div>
-        <!-- sem botão visível; exporto por atalho/URL -->
-        <div id="export-controls" class="hidden">
-          <a class="btn" id="btn-svg">Exportar SVG</a>
-          <a class="btn" id="btn-pdf">Exportar PDF</a>
-        </div>
+        <!-- sem botões; exportação só por atalhos -->
       </div>
     </div>
   </div>
@@ -200,81 +194,81 @@ table.minimal th{{color:var(--muted);font-weight:600}}
       </p>
     `;
 
-    // ===== Exportação Vetorial =====
+    // ===== Exportação Vetorial (somente atalhos) =====
     const PANEL = document.getElementById('panel');
 
     async function exportSVG() {{
-      // Converte o painel para SVG via foreignObject (mantém textos como texto)
       const dataUrl = await domtoimage.toSvg(PANEL, {{
         bgcolor: '{CARD_DARK}',
-        filter: (node) => true,
-        style: {{
-          // Garante background e fontes
-          'background': '{CARD_DARK}',
-          'color': '{TEXT}'
-        }},
         quality: 1
       }});
-      triggerDownload(dataUrl, 'SITREP_Painel.svg');
+      // tenta baixar; se bloqueado pelo sandbox, abre em nova aba
+      if (!safeDownload(dataUrl, 'SITREP_Painel.svg')) {{
+        window.open(dataUrl, '_blank', 'noopener');
+      }}
     }}
 
     async function exportPDF() {{
-      // 1) Gera SVG
-      const svgUrl = await domtoimage.toSvg(PANEL, {{
-        bgcolor: '{CARD_DARK}',
-        quality: 1
-      }});
+      const svgUrl  = await domtoimage.toSvg(PANEL, {{ bgcolor: '{CARD_DARK}', quality: 1 }});
       const svgText = await (await fetch(svgUrl)).text();
 
-      // 2) Converte SVG -> PDF (A4 portrait)
       const {{ jsPDF }} = window.jspdf;
       const pdf = new jsPDF({{ unit: 'pt', format: 'a4', orientation: 'p' }});
 
-      // Ajuste de escala para caber na página mantendo proporção
+      // dimensões do SVG
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
       const svgEl  = svgDoc.documentElement;
       const width  = parseFloat(svgEl.getAttribute('width'))  || PANEL.offsetWidth;
       const height = parseFloat(svgEl.getAttribute('height')) || PANEL.offsetHeight;
 
+      // escala para caber na página mantendo proporção
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const scale = Math.min(pageW / width, pageH / height);
 
-      // Renderiza o SVG no PDF
       window.svg2pdf(svgEl, pdf, {{
         x: (pageW - width * scale) / 2,
         y: (pageH - height * scale) / 2,
         scale: scale
       }});
 
-      pdf.save('SITREP_Painel.pdf');
+      try {{
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        if (!safeDownload(url, 'SITREP_Painel.pdf')) {{
+          window.open(url, '_blank', 'noopener');
+        }}
+        // URL.revokeObjectURL(url); // revogue manualmente após salvar, se quiser
+      }} catch (e) {{
+        console.error(e);
+      }}
     }}
 
-    function triggerDownload(dataUrl, filename) {{
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    function safeDownload(url, filename) {{
+      try {{
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return true;
+      }} catch (_) {{
+        return false;
+      }}
     }}
 
-    // Atalhos: S (SVG), P (PDF)
+    // Atalhos: S (SVG) e P (PDF)
     document.addEventListener('keydown', (e) => {{
       if (e.key === 's' || e.key === 'S') exportSVG();
       if (e.key === 'p' || e.key === 'P') exportPDF();
     }});
-
-    // Auto-export por querystring (?export=svg | ?export=pdf)
-    const params = new URLSearchParams(location.search);
-    const exp = params.get('export');
-    if (exp === 'svg') exportSVG();
-    if (exp === 'pdf') exportPDF();
   </script>
 </body></html>
 """
 
 components.html(html, height=900, scrolling=False)
-
 
