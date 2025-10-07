@@ -38,12 +38,13 @@ sensor       = "BlackSky Global-16 (Sensor: Global-16)"
 agora        = datetime.now().strftime("%d/%m %H:%M")
 
 achados = [
-    "Vias lineares abertas na vegetação, com características de abertura recente ou uso contínuo — indícios compatíveis com pressão antrópica, como atividade madeireira, garimpo ou ocupação irregular.",
-    "Clareiras de diferentes tamanhos, algumas conectadas às vias mencionadas.",
-    "Aglomerados habitacionais dispersos, sugerindo presença humana ativa.",
-    "Pista de pouso com dimensões estimadas entre 750 e 850 m de comprimento, largura compatível com operação de aeronaves de pequeno porte.",
-    "A pista conecta-se a uma rede de vias irregulares e áreas desmatadas, reforçando o caráter logístico da estrutura.",
+    "Anomalia extensa compatível com mancha de óleo detectada em imagem SAR, com ~25 km de comprimento.",
+    "Indícios apontam para origem em embarcação em movimento — navio-tanque (LPG) Grajau — ao largo da costa brasileira.",
+    "Estado do mar calmo no momento da aquisição, favorecendo contraste e visibilidade da feição.",
+    "Ponto de detecção localizado a ~20 km da linha de costa.",
+    "Próximo passe de satélite previsto em X horas, permitindo acompanhamento e confirmação da evolução."
 ]
+
 
 html = f"""
 <!doctype html>
