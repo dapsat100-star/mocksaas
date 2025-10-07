@@ -175,7 +175,7 @@ st.markdown(
     <div class="side-panel">
       <h2 style="display:flex;align-items:center;justify-content:space-between;">
         <span>Relatório de Situação</span>
-        <span style="font-size:.95rem;color:{MUTED};font-weight:600;">Radar SAR + IA</span>
+        <span style="font-size:.95rem;color:{MUTED};font-weight:600;">Imagem Óptica + IA</span>
       </h2>
 
       <div class="metrics">
@@ -188,7 +188,7 @@ st.markdown(
       <p class="muted" style="margin:.2rem 0 .3rem;">Resumo</p>
       <p>
         A cena mostra detecções sobrepostas à imagem base, com registro geométrico submétrico.
-        O pipeline combina <b>SAR + IA + fusão multi-sensor</b> para gerar insights acionáveis em <b>tempo quase-real</b>.
+        O pipeline combina <b>Imagem Óptica + IA + ML</b> para gerar insights acionáveis em <b>tempo quase-real</b>.
       </p>
 
       <h4>Principais Achados</h4>
