@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# DAP ATLAS — Sidebar SaaS (com logo aumentado)
+# DAP ATLAS — Sidebar SaaS (logo grande + achados atualizados + cena 5x5 km)
 
 from datetime import datetime
 from base64 import b64encode
@@ -22,24 +22,27 @@ PANEL_GAP_PX = 24
 
 # ========= LOGO =========
 logo_uri = ""
-p = Path("dapatlas_fundo_branco.png")  # seu arquivo de logo em PNG com fundo branco
+p = Path("dapatlas_fundo_branco.png")  # seu logo PNG com fundo branco
 if p.exists() and p.stat().st_size > 0:
     logo_uri = "data:image/png;base64," + b64encode(p.read_bytes()).decode("ascii")
 
-# ========= DADOS MOCK =========
+# ========= DADOS =========
 AOI_ID       = "BR-PA-2025-01"
 confianca    = "92%"
-extensao_km  = "5 km"
-area_km2     = "25 km²"
+extensao_km  = "5 km"        # cena 5 x 5 km
+area_km2     = "25 km²"      # 5 x 5 = 25 km²
 resolucao    = "35 cm"
-local        = "Cena 5 x 5 km"
+local        = "Cena 5 × 5 km"
 data_hora    = "07/06/2025 – 09:25"
 sensor       = "BlackSky Global-16 (Sensor: Global-16)"
 agora        = datetime.now().strftime("%d/%m %H:%M")
+
 achados = [
-    "Mancha com extensão linear principal detectada ao longo do eixo Leste–Oeste.",
-    "Formato alongado, compatível com derramamento linear.",
-    "Condições atmosféricas favoráveis para análise SAR.",
+    "Vias lineares abertas na vegetação, com características de abertura recente ou uso contínuo — indícios compatíveis com pressão antrópica, como atividade madeireira, garimpo ou ocupação irregular.",
+    "Clareiras de diferentes tamanhos, algumas conectadas às vias mencionadas.",
+    "Aglomerados habitacionais dispersos, sugerindo presença humana ativa.",
+    "Pista de pouso com dimensões estimadas entre 750 e 850 m de comprimento, largura compatível com operação de aeronaves de pequeno porte.",
+    "A pista conecta-se a uma rede de vias irregulares e áreas desmatadas, reforçando o caráter logístico da estrutura.",
 ]
 
 # ========= HTML =========
@@ -83,21 +86,19 @@ html = f"""
     padding: 16px;
     display: flex; flex-direction: column; gap: 10px;
   }}
-  .panel-header {{ display:flex; align-items:center; justify-content:space-between; gap:12px; }}
+  .panel-header {{ display:flex; align-items:center; justify-content:space-between; gap:18px; }}
   .brand {{ display:flex; align-items:center; gap:18px; }}
   .logo-wrap {{
-    width:80px; height:80px;  /* 👈 AQUI aumentamos o tamanho do logo */
+    width:80px; height:80px;             /* logo maior */
     border-radius:18px;
     overflow:hidden;
-    background:#ffffff;
+    background:#ffffff;                   /* fundo branco p/ o logo */
     border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center;
   }}
   .logo-wrap img {{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    display:block;
+    width:100%; height:100%;
+    object-fit:contain; display:block;
   }}
   .name {{ font-weight:800; letter-spacing:.2px; line-height:1.1; font-size:1.1rem; }}
   .sub  {{ font-size:.82rem; color:var(--muted); margin-top:2px; }}
@@ -130,20 +131,15 @@ html = f"""
   table.minimal {{ width:100%; border-collapse:collapse; margin-top:6px; }}
   table.minimal th, table.minimal td {{
     border-bottom:1px solid var(--border);
-    padding:9px 6px;
-    text-align:left;
-    font-size:.95rem;
+    padding:9px 6px; text-align:left; font-size:.95rem;
   }}
   table.minimal th {{ color:var(--muted); font-weight:600; }}
   .btn {{
-    display:inline-block;
-    background: var(--primary);
-    color:#08121f;
-    font-weight:800;
-    padding:10px 14px;
-    border-radius:12px;
-    text-decoration:none;
-    border:none;
+    display:inline-block; background: var(--primary); color:#08121f; font-weight:800;
+    padding:10px 14px; border-radius:12px; text-decoration:none; border:none;
+  }}
+  @media (max-width: 820px) {{
+    :root {{ --panel-w: 92vw; }}
   }}
 </style>
 </head>
@@ -206,6 +202,5 @@ html = f"""
 </html>
 """
 
-# Renderização via iframe
 components.html(html, height=900, scrolling=False)
 
