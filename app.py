@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-# DAP ATLAS – SITREP (Full-width Map + Floating SaaS Panel + Export PDF, texto branco)
+# DAP ATLAS – SITREP (Extensão + Área separadas, SaaS UI, PDF Export)
 
 import io
 from datetime import datetime
-
 import streamlit as st
 
 # —— mapa
 import folium
-from folium import GeoJson, Rectangle, PolyLine
+from folium import Rectangle, PolyLine
 from streamlit_folium import st_folium
 
 # —— PDF
@@ -29,7 +28,7 @@ st.set_page_config(
 PRIMARY = "#00E3A5"
 BG_DARK = "#0b1221"
 CARD_DARK = "#10182b"
-TEXT = "#FFFFFF"      # ✅ branco puro para melhor legibilidade
+TEXT = "#FFFFFF"      # branco puro
 MUTED = "#9fb0c9"
 BORDER = "rgba(255,255,255,.10)"
 
@@ -42,7 +41,6 @@ st.markdown(
       }}
       body {{ background:{BG_DARK}; color:{TEXT}; }}
 
-      /* Mapa em full width */
       .full-map {{
         position: relative;
         height: calc(100vh - 0px);
@@ -51,7 +49,6 @@ st.markdown(
         border-bottom: 1px solid {BORDER};
       }}
 
-      /* Painel SaaS flutuante (direita) */
       .side-panel {{
         position: fixed;
         top: 14px; right: 14px;
@@ -99,7 +96,6 @@ st.markdown(
       .metric .k {{ font-size: 1.1rem; font-weight: 800; }}
       .metric .l {{ font-size:.85rem; color:{MUTED}; }}
 
-      .actions {{ display:flex; gap:8px; flex-wrap: wrap; margin-top: 8px; }}
       .btn {{
         background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
         border: 1px solid {BORDER}; color:{TEXT};
@@ -129,7 +125,8 @@ data_local = "07/06/2025 – 09:25"
 sensor = "BlackSky Global-16 (Sensor: Global-16)"
 resolucao = "35 cm"
 confianca = "92%"
-extensao_km = "26.8 km²"
+extensao_km = "12.4 km"
+area_km2 = "26.8 km²"
 ultima_atualizacao = datetime.now().strftime("%d/%m %H:%M")
 
 achados = [
@@ -175,20 +172,20 @@ st.markdown(
     <div class="side-panel">
       <h2 style="display:flex;align-items:center;justify-content:space-between;">
         <span>Relatório de Situação</span>
-        <span style="font-size:.95rem;color:{MUTED};font-weight:600;">Imagem Óptica + IA</span>
+        <span style="font-size:.95rem;color:{MUTED};font-weight:600;">Radar SAR + IA</span>
       </h2>
 
       <div class="metrics">
         <div class="metric"><div class="k">{confianca}</div><div class="l">Confiança</div></div>
-        <div class="metric"><div class="k">{extensao_km}</div><div class="l">Extensão (estim.)</div></div>
+        <div class="metric"><div class="k">{extensao_km}</div><div class="l">Extensão</div></div>
+        <div class="metric"><div class="k">{area_km2}</div><div class="l">Área</div></div>
         <div class="metric"><div class="k">{resolucao}</div><div class="l">Resolução</div></div>
-        <div class="metric"><div class="k">{ultima_atualizacao}</div><div class="l">Atualização</div></div>
       </div>
 
       <p class="muted" style="margin:.2rem 0 .3rem;">Resumo</p>
       <p>
         A cena mostra detecções sobrepostas à imagem base, com registro geométrico submétrico.
-        O pipeline combina <b>Imagem Óptica + IA + ML</b> para gerar insights acionáveis em <b>tempo quase-real</b>.
+        O pipeline combina <b>SAR + IA + fusão multi-sensor</b> para gerar insights acionáveis em <b>tempo quase-real</b>.
       </p>
 
       <h4>Principais Achados</h4>
@@ -214,12 +211,10 @@ def build_pdf() -> bytes:
     c = canvas.Canvas(buffer, pagesize=A4)
     W, H = A4
     margin = 1.6 * cm
-
     primary = HexColor(PRIMARY)
 
     c.setFillColor(primary)
     c.rect(0, H-2.1*cm, W, 2.1*cm, stroke=0, fill=1)
-
     c.setFont("Helvetica-Bold", 16)
     c.setFillColorRGB(1, 1, 1)
     c.drawString(margin, H-1.5*cm, f"DAP ATLAS — SITREP  •  AOI {AOI_ID}")
@@ -231,14 +226,16 @@ def build_pdf() -> bytes:
     c.setFont("Helvetica-Bold", 12)
     c.drawString(margin, y, "Metadados")
     y -= 0.4*cm
-    c.setFont("Helvetica", 10)
     meta = [
         f"Local: {local}",
         f"Data/Hora: {data_local}",
         f"Fonte: {sensor}",
+        f"Extensão: {extensao_km}",
+        f"Área: {area_km2}",
         f"Resolução: {resolucao}",
         "Sistema: DAP ATLAS — SITREP"
     ]
+    c.setFont("Helvetica", 10)
     for ln in meta:
         c.drawString(margin, y, ln)
         y -= 0.4*cm
@@ -278,3 +275,4 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
