@@ -129,7 +129,7 @@ data_local = "07/06/2025 – 09:25"
 sensor = "BlackSky Global-16 (Sensor: Global-16)"
 resolucao = "35 cm"
 confianca = "92%"
-area_km2 = "26.8 km²"
+extensao = "26.8 km²"
 ultima_atualizacao = datetime.now().strftime("%d/%m %H:%M")
 
 achados = [
