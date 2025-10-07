@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-# DAP ATLAS — SITREP (Full Map + Floating SaaS Panel + PDF + Extensão/Área + Logo no painel)
-
+# DAP ATLAS — SITREP (Full Map + Floating Panel + PDF + Extensão/Área + Logo)
 import io
 from datetime import datetime
 from base64 import b64encode
 from pathlib import Path
 import streamlit as st
 
-# Mapa
+# Map
 import folium
 from folium import Rectangle, PolyLine
 from streamlit_folium import st_folium
@@ -18,7 +17,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.colors import black, HexColor
 
-# ================== PAGE CONFIG ==================
+# ============== PAGE CONFIG ==============
 st.set_page_config(
     page_title="DAP ATLAS — SITREP",
     page_icon="🛰️",
@@ -26,52 +25,46 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ================== TEMA ==================
+# ============== THEME / FLAGS ==============
 PRIMARY   = "#00E3A5"
 BG_DARK   = "#0b1221"
 CARD_DARK = "#10182b"
-TEXT      = "#FFFFFF"     # branco puro
+TEXT      = "#FFFFFF"      # branco puro
 MUTED     = "#9fb0c9"
 BORDER    = "rgba(255,255,255,.10)"
 
-# Largura do painel e opção de “desviar” o mapa (em vez de sobrepor)
-PANEL_W_PX   = 560
-PANEL_GAP_PX = 14
-desviar_painel = True  # False = sobreposto
+PANEL_W_PX   = 560          # largura do painel lateral
+PANEL_GAP_PX = 14           # gap da borda
+DESVIAR_PAINEL = True       # True = mapa não fica encoberto
 
-# ================== LOGO ==================
-logo_path = "dapatlas.png"   # deixe o arquivo na mesma pasta do app
+# ============== LOGO (ajuste o nome do arquivo se quiser) ==============
+LOGO_PATH = "dapatlas.png"
 def logo_data_uri(path: str) -> str | None:
     p = Path(path)
     if not p.exists() or p.stat().st_size == 0:
         return None
-    data = p.read_bytes()
-    return "data:image/png;base64," + b64encode(data).decode("ascii")
+    return "data:image/png;base64," + b64encode(p.read_bytes()).decode("ascii")
+LOGO_URI = logo_data_uri(LOGO_PATH)
 
-LOGO_URI = logo_data_uri(logo_path)
-
-# ================== CSS ==================
+# ============== CSS ==============
 st.markdown(f"""
 <style>
   :root {{
     --panel-w: {PANEL_W_PX}px;
     --panel-gap: {PANEL_GAP_PX}px;
   }}
-
   .block-container {{ padding: 0; max-width: 100%; }}
   body {{ background:{BG_DARK}; color:{TEXT}; }}
 
-  /* Mapa ocupa a janela toda; se "desviar_painel" True, aplica padding-right */
   .full-map {{
     position: relative;
     height: 100vh;
     width: 100%;
     border-bottom: 1px solid {BORDER};
-    padding-right: {'calc(var(--panel-w) + var(--panel-gap))' if desviar_painel else '0'};
+    padding-right: {'calc(var(--panel-w) + var(--panel-gap))' if DESVIAR_PAINEL else '0'};
     box-sizing: border-box;
   }}
 
-  /* Painel SaaS flutuante (respeita safe-area e não corta em baixo) */
   .side-panel {{
     position: fixed;
     top: max(14px, env(safe-area-inset-top));
@@ -90,15 +83,11 @@ st.markdown(f"""
   }}
   .muted {{ color:{MUTED}; }}
 
-  .panel-header {{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;
-  }}
-  .brand {{
-    display:flex; align-items:center; gap:12px;
-  }}
+  .panel-header {{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }}
+  .brand {{ display:flex; align-items:center; gap:12px; }}
   .brand .logo-wrap {{
-    width:42px; height:42px; border-radius:12px; overflow:hidden; background:#0e1628; border:1px solid {BORDER};
-    display:flex; align-items:center; justify-content:center;
+    width:42px; height:42px; border-radius:12px; overflow:hidden; background:#0e1628;
+    border:1px solid {BORDER}; display:flex; align-items:center; justify-content:center;
   }}
   .brand .logo-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
   .brand .name {{ font-weight:800; letter-spacing:.2px; line-height:1.1; }}
@@ -108,34 +97,21 @@ st.markdown(f"""
     background: rgba(0,227,165,.12);
     color:{PRIMARY};
     border: 1px solid rgba(0,227,165,.25);
-    padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size:.85rem;
-    white-space:nowrap;
+    padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size:.85rem; white-space:nowrap;
   }}
 
-  .metrics {{
-    display:grid; grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 8px; margin: 10px 0 6px;
-  }}
-  .metric {{
-    background: rgba(255,255,255,.04);
-    border: 1px solid {BORDER};
-    border-radius: 14px; padding: 10px;
-    color:{TEXT};
-  }}
+  .metrics {{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 10px 0 6px; }}
+  .metric {{ background: rgba(255,255,255,.04); border: 1px solid {BORDER}; border-radius: 14px; padding: 10px; color:{TEXT}; }}
   .metric .k {{ font-size: 1.1rem; font-weight: 800; }}
   .metric .l {{ font-size:.85rem; color:{MUTED}; }}
 
   table.minimal {{ width:100%; border-collapse: collapse; margin-top: 6px; color:{TEXT}; }}
-  table.minimal th, table.minimal td {{
-    border-bottom: 1px solid {BORDER};
-    padding: 8px 6px; text-align: left; font-size: .95rem;
-  }}
+  table.minimal th, table.minimal td {{ border-bottom: 1px solid {BORDER}; padding: 8px 6px; text-align: left; font-size: .95rem; }}
   table.minimal th {{ color:{MUTED}; font-weight: 600; }}
 
   .bullets {{ margin: 4px 0 0 0; padding-left: 1.1rem; }}
   .bullets li {{ margin: 8px 0; }}
 
-  /* Appbar (informativo) */
   .appbar {{
     position: fixed;
     left: max(14px, env(safe-area-inset-left));
@@ -150,25 +126,24 @@ st.markdown(f"""
     color:{TEXT};
   }}
 
-  /* Responsivo: reduz painel e padding do mapa automaticamente */
   @media (max-width: 1200px) {{ :root {{ --panel-w: 480px; }} }}
   @media (max-width: 992px)  {{ :root {{ --panel-w: 420px; }} }}
   @media (max-width: 820px)  {{
     :root {{ --panel-w: 92vw; }}
-    .full-map {{ padding-right: 0; }}  /* mobile: sobrepõe para caber */
+    .full-map {{ padding-right: 0; }} /* mobile: sobrepõe para caber */
   }}
 </style>
 """, unsafe_allow_html=True)
 
-# ================== DADOS (exemplo; troque pelo pipeline) ==================
+# ============== DADOS (definidos ANTES de usar) ==============
 AOI_ID = "BR-PA-2025-01"
 local = "XPTO"
 data_local = "07/06/2025 – 09:25"
 sensor = "BlackSky Global-16 (Sensor: Global-16)"
 resolucao = "35 cm"
 confianca = "92%"
-extensao_km = "12.4 km"
-area_km2 = "26.8 km²"
+extensao_km = "12.4 km"     # ✅ definido
+area_km2    = "26.8 km²"    # ✅ definido
 ultima_atualizacao = datetime.now().strftime("%d/%m %H:%M")
 achados = [
     "Vias lineares abertas e ramificações não oficiais indicando pressão antrópica.",
@@ -177,22 +152,21 @@ achados = [
     "Pista de pouso estimada entre 750–850 m (operação de aeronaves leves).",
 ]
 
-# ================== MAPA ==================
+# ============== MAPA ==============
 center_latlon = (-6.6756, -57.6647)
 m = folium.Map(location=center_latlon, zoom_start=12, tiles="CartoDB.DarkMatter")
 
-# overlays de exemplo
+# overlays de exemplo (troque pelos seus GeoJSONs)
 PolyLine(
     locations=[(-6.665, -57.70), (-6.662, -57.675)],
     color=PRIMARY, weight=4, tooltip="Pista (estimada)"
 ).add_to(m)
-
 Rectangle(
     bounds=[(-6.70, -57.71), (-6.66, -57.67)],
     color="#ffd95a", weight=2, fill=False, tooltip="AOI principal"
 ).add_to(m)
 
-# ================== APPBAR (opcional) ==================
+# ============== APPBAR (opcional) ==============
 st.markdown(
     f"""
     <div class="appbar">
@@ -202,13 +176,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ================== MAPA FULL ==================
+# ============== MAPA FULL (altura real no iframe) ==============
 st.markdown('<div class="full-map">', unsafe_allow_html=True)
 st_folium(m, height=820, width=None)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ================== PAINEL SAAS (com LOGO) ==================
-# Header com logo + nome + badge
+# ============== PAINEL SAAS (com LOGO) ==============
 brand_html = f"""
   <div class="brand">
     <div class="logo-wrap">
@@ -261,7 +234,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ================== PDF EXPORT ==================
+# ============== PDF EXPORT ==============
 def build_pdf() -> bytes:
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -269,7 +242,7 @@ def build_pdf() -> bytes:
     margin = 1.6 * cm
     primary = HexColor(PRIMARY)
 
-    # Faixa topo
+    # Header
     c.setFillColor(primary); c.rect(0, H-2.1*cm, W, 2.1*cm, stroke=0, fill=1)
     c.setFont("Helvetica-Bold", 16); c.setFillColorRGB(1,1,1)
     c.drawString(margin, H-1.5*cm, f"DAP ATLAS — SITREP  •  AOI {AOI_ID}")
@@ -316,7 +289,7 @@ st.download_button(
 # Fecha a div do painel após o botão
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== FOOTER ==================
+# ============== FOOTER ==============
 st.markdown(
     f"""
     <div style="position:fixed; left:max(14px, env(safe-area-inset-left)); bottom:max(14px, env(safe-area-inset-bottom)); color:{MUTED}; font-size:.86rem;">
@@ -325,5 +298,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 
 
