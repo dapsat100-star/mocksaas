@@ -37,15 +37,16 @@ data_hora    = "07/06/2025 – 09:25"
 sensor       = "BlackSky Global-16 (Sensor: Global-16)"
 agora        = datetime.now().strftime("%d/%m %H:%M")
 
+# ======= Achados (adequados ao caso de vias/clareiras/aglomerações/pista)
 achados = [
-    "Anomalia extensa compatível com mancha de óleo detectada em imagem SAR, com ~25 km de comprimento.",
-    "Indícios apontam para origem em embarcação em movimento — navio-tanque (LPG) Grajau — ao largo da costa brasileira.",
-    "Estado do mar calmo no momento da aquisição, favorecendo contraste e visibilidade da feição.",
-    "Ponto de detecção localizado a ~20 km da linha de costa.",
-    "Próximo passe de satélite previsto em X horas, permitindo acompanhamento e confirmação da evolução."
+    "Vias lineares abertas na vegetação, com indícios de abertura recente ou uso contínuo — compatíveis com pressão antrópica (atividade madeireira, garimpo ou ocupação irregular).",
+    "Clareiras de diferentes tamanhos, algumas conectadas às vias mencionadas.",
+    "Aglomerados habitacionais dispersos, sugerindo presença humana ativa.",
+    "Pista de pouso com dimensões estimadas entre 750 e 850 m de comprimento; largura compatível com operação de aeronaves de pequeno porte.",
+    "A pista conecta-se a uma rede de vias irregulares e a áreas desmatadas, reforçando o caráter logístico da estrutura."
 ]
 
-
+# ======= HTML/JS (com export por atalhos S e P)
 html = f"""
 <!doctype html>
 <html><head><meta charset="utf-8"/>
@@ -190,8 +191,10 @@ table.minimal th{{color:var(--muted);font-weight:600}}
     resumo.innerHTML = `
       <div class="section-title">Resumo</div>
       <p>
-        Detecções sobrepostas à imagem base, com registro geométrico submétrico.
-        Pipeline <b>Imagem Óptica + IA + fusão multi-sensor</b> com atualização em <b>tempo quase-real</b>.
+        Evidências de <b>pressão antrópica</b> e possível logística associada: abertura recente de vias,
+        <b>clareiras conectadas</b>, <b>aglomerados habitacionais</b> e <b>pista de pouso (~750–850 m)</b>
+        interligada por rede viária irregular. Pipeline <b>Imagem Óptica + IA</b>
+        (detecção de padrões e vetores lineares), com atualização em <b>tempo quase-real</b>.
       </p>
     `;
 
@@ -203,7 +206,6 @@ table.minimal th{{color:var(--muted);font-weight:600}}
         bgcolor: '{CARD_DARK}',
         quality: 1
       }});
-      // tenta baixar; se bloqueado pelo sandbox, abre em nova aba
       if (!safeDownload(dataUrl, 'SITREP_Painel.svg')) {{
         window.open(dataUrl, '_blank', 'noopener');
       }}
@@ -216,14 +218,12 @@ table.minimal th{{color:var(--muted);font-weight:600}}
       const {{ jsPDF }} = window.jspdf;
       const pdf = new jsPDF({{ unit: 'pt', format: 'a4', orientation: 'p' }});
 
-      // dimensões do SVG
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
       const svgEl  = svgDoc.documentElement;
       const width  = parseFloat(svgEl.getAttribute('width'))  || PANEL.offsetWidth;
       const height = parseFloat(svgEl.getAttribute('height')) || PANEL.offsetHeight;
 
-      // escala para caber na página mantendo proporção
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const scale = Math.min(pageW / width, pageH / height);
@@ -240,7 +240,6 @@ table.minimal th{{color:var(--muted);font-weight:600}}
         if (!safeDownload(url, 'SITREP_Painel.pdf')) {{
           window.open(url, '_blank', 'noopener');
         }}
-        // URL.revokeObjectURL(url); // revogue manualmente após salvar, se quiser
       }} catch (e) {{
         console.error(e);
       }}
