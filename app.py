@@ -37,7 +37,7 @@ acq_datetime = "2025-06-07 – 09:25"
 sensor       = "BlackSky Global-16 (Sensor: Global-16)"
 now_label    = datetime.now().strftime("%d/%m %H:%M")
 
-# ======= Findings (suited to roads/clearings/settlements/airstrip case)
+# ======= Findings (roads / clearings / settlements / airstrip)
 findings = [
     "Linear roads opened through vegetation, with signs of recent opening or continuous use — consistent with anthropic pressure (logging, mining, or irregular occupation).",
     "Clearings of different sizes, some connected to the aforementioned roads.",
@@ -68,7 +68,7 @@ body{{margin:0;height:100vh;width:100vw;background:var(--bg);color:var(--text);
   width:var(--panel-w); background:var(--card); border:1px solid var(--border);
   border-radius:18px; box-shadow:0 18px 44px rgba(0,0,0,.45);
   padding:16px; display:flex; flex-direction:column; gap:12px;
-  overflow:auto;               /* internal scroll, no clipping */
+  overflow:auto;
 }}
 .panel-header{{display:flex;align-items:center;justify-content:space-between;gap:18px}}
 .brand{{display:flex;align-items:center;gap:18px}}
@@ -84,8 +84,164 @@ body{{margin:0;height:100vh;width:100vw;background:var(--bg);color:var(--text);
 .metric .k{{font-size:1.15rem;font-weight:800}}
 .metric .l{{font-size:.85rem;color:var(--muted)}}
 
-/* ======= Tabs (CSS-only) ======= */
+/* ======= Tabs ======= */
 .tabs{{margin-top:6px}}
 .tabs input{{display:none}}
 .tabs label{{
-  display:i
+  display:inline-block; padding:8px 12px; margin-right:8px; border:1px solid var(--border);
+  border-bottom:none; border-top-left-radius:10px; border-top-right-radius:10px;
+  color:var(--muted); background:rgba(255,255,255,.02); cursor:pointer; font-weight:700; font-size:.92rem
+}}
+.tabs input:checked + label{{color:#08121f; background:var(--primary); border-color:var(--primary)}}
+.tab-content{{border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:12px; margin-top:-1px}}
+
+ul.bullets{{margin:6px 0 0 0; padding-left:1.1rem}}
+ul.bullets li{{margin:8px 0}}
+.section-title{{font-weight:800; margin: 2px 0 8px}}
+
+table.minimal{{width:100%;border-collapse:collapse;margin-top:2px}}
+table.minimal th, table.minimal td{{border-bottom:1px solid var(--border);padding:9px 6px;text-align:left;font-size:.95rem}}
+table.minimal th{{color:var(--muted);font-weight:600}}
+
+.footer{{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px}}
+.small{{font-size:.85rem}}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="side-panel" id="panel">
+      <div class="panel-header">
+        <div class="brand">
+          <div class="logo-wrap">
+            {"<img src='"+logo_uri+"' alt='DAP ATLAS'/>" if logo_uri else "<div style='color:#000;font-weight:900'>DA</div>"}
+          </div>
+          <div>
+            <div class="name">Situation Report</div>
+            <div class="sub">Optical Imagery + AI</div>
+          </div>
+        </div>
+        <div class="badge">AOI {AOI_ID} • Live 24/7</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><div class="k">{confidence}</div><div class="l">Confidence</div></div>
+        <div class="metric"><div class="k">{extent_km}</div><div class="l">Extent</div></div>
+        <div class="metric"><div class="k">{area_km2}</div><div class="l">Area</div></div>
+        <div class="metric"><div class="k">{resolution}</div><div class="l">Resolution</div></div>
+      </div>
+
+      <div class="tabs">
+        <input type="radio" name="tab" id="tab-findings" checked>
+        <label for="tab-findings">Key Findings</label>
+
+        <input type="radio" name="tab" id="tab-meta">
+        <label for="tab-meta">Metadata</label>
+
+        <input type="radio" name="tab" id="tab-summary">
+        <label for="tab-summary">Summary</label>
+
+        <div class="tab-content" id="content-findings">
+          <ul class="bullets">
+            {''.join(f'<li>{a}</li>' for a in findings)}
+          </ul>
+        </div>
+
+        <div class="tab-content" id="content-meta" style="display:none"></div>
+        <div class="tab-content" id="content-summary" style="display:none"></div>
+      </div>
+
+      <div class="footer">
+        <div class="muted small">© {datetime.now().year} MAVIPE Space Systems</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@2.8.0/dist/dom-to-image-more.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"></script>
+
+  <script>
+    const findingsEl = document.getElementById('content-findings');
+    const metaEl     = document.getElementById('content-meta');
+    const summaryEl  = document.getElementById('content-summary');
+
+    function show(which) {{
+      findingsEl.style.display = (which==='f')?'block':'none';
+      metaEl.style.display     = (which==='m')?'block':'none';
+      summaryEl.style.display  = (which==='s')?'block':'none';
+    }}
+    document.getElementById('tab-findings').onchange = ()=>show('f');
+    document.getElementById('tab-meta').onchange     = ()=>show('m');
+    document.getElementById('tab-summary').onchange  = ()=>show('s');
+
+    metaEl.innerHTML = `
+      <div class="section-title">Metadata</div>
+      <table class="minimal">
+        <tr><th>Location</th><td>{location}</td></tr>
+        <tr><th>Acquisition Time</th><td>{acq_datetime}</td></tr>
+        <tr><th>Source</th><td>{sensor}</td></tr>
+        <tr><th>Generated</th><td>{now_label}</td></tr>
+        <tr><th>System</th><td>DAP ATLAS — SITREP</td></tr>
+      </table>
+    `;
+    summaryEl.innerHTML = `
+      <div class="section-title">Summary</div>
+      <p>
+        Evidence of <b>anthropic pressure</b> and related logistics: recent road openings,
+        <b>connected clearings</b>, <b>residential clusters</b>, and an <b>airstrip (~750–850 m)</b>
+        linked through an irregular road network. <b>Optical Imagery + AI</b> pipeline
+        (pattern and linear feature detection) with <b>near-real-time</b> updates.
+      </p>
+    `;
+
+    const PANEL = document.getElementById('panel');
+    async function exportSVG() {{
+      const dataUrl = await domtoimage.toSvg(PANEL, {{ bgcolor: '{CARD_DARK}', quality: 1 }});
+      try {{
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'SITREP_Panel.svg';
+        a.click();
+      }} catch (e) {{
+        window.open(dataUrl, '_blank', 'noopener');
+      }}
+    }}
+    async function exportPDF() {{
+      const svgUrl  = await domtoimage.toSvg(PANEL, {{ bgcolor: '{CARD_DARK}', quality: 1 }});
+      const svgText = await (await fetch(svgUrl)).text();
+      const {{ jsPDF }} = window.jspdf;
+      const pdf = new jsPDF({{ unit: 'pt', format: 'a4', orientation: 'p' }});
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgEl  = svgDoc.documentElement;
+      const width  = parseFloat(svgEl.getAttribute('width'))  || PANEL.offsetWidth;
+      const height = parseFloat(svgEl.getAttribute('height')) || PANEL.offsetHeight;
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const scale = Math.min(pageW / width, pageH / height);
+      window.svg2pdf(svgEl, pdf, {{
+        x: (pageW - width * scale) / 2,
+        y: (pageH - height * scale) / 2,
+        scale: scale
+      }});
+      try {{
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'SITREP_Panel.pdf';
+        a.click();
+      }} catch (e) {{
+        window.open(url, '_blank', 'noopener');
+      }}
+    }}
+    document.addEventListener('keydown', e => {{
+      if (e.key==='s'||e.key==='S') exportSVG();
+      if (e.key==='p'||e.key==='P') exportPDF();
+    }});
+  </script>
+</body></html>
+"""
+
+components.html(html, height=900, scrolling=False)
+
